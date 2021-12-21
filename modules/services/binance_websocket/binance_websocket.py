@@ -2,20 +2,20 @@ from unicorn_binance_websocket_api.unicorn_binance_websocket_api_manager import 
 from statistics import median as s_median
 import time
 import json
-from communication import Logger
 
-logger = Logger.get_logger('Websocket')
-
+# TODO: All analysis logic needs to be moved on microservice-side processing. It's just an example.
 
 class BinanceWsWorkers:
-    def __init__(self, volume_multiplicator):
+    def __init__(self, volume_multiplicator, kafka_producer):
         self.volume_multiplicator = volume_multiplicator
+        self.kafka_producer = kafka_producer
 
     def check_order_size(self, bids_asks:dict) -> list:
         '''
         :param bids_asks: dict {bids:[bids orders], asks:[ask orders]}
         :return: [{action: str(bids), volume: float(23.0), price:float(2.0)}, {}...]
         '''
+
         huge_orders = list()
         for action, orders in bids_asks.items():
             # Creates dict {volume:price,...}
@@ -23,7 +23,6 @@ class BinanceWsWorkers:
             volume_median = s_median(list(volumes_price_pairs.keys()))
             volume_sorted = sorted(list(volumes_price_pairs.keys()), reverse= True)
             for volume in volume_sorted:
-                # if volume * self.volume_multiplicator > volume_median:
                 if volume_median * self.volume_multiplicator < volume:
                     result_line = {
                         'action': action,
@@ -44,6 +43,7 @@ class BinanceWsWorkers:
         :return: Dict of notifications { ticker: [{action: str(bids),
         volume: float(23.0), price:float(2.0)}, ... ]}
         '''
+
         stream_data = json.loads(last_data_from_buffer)
         ticker = stream_data.get('stream', None)
         if ticker:
@@ -59,6 +59,7 @@ class BinanceWsWorkers:
         '''
         Creating streams and searching orders that > 1000 times than median in last 40 orders(20 bids, 20 asks)
         '''
+
         binance_ws_manager = BinanceWebSocketApiManager(exchange="binance.com")
         # Cutting according to the limit of streams that available to open by default
         whitelist_tickers = whitelist_tickers[:1024]
@@ -73,5 +74,4 @@ class BinanceWsWorkers:
             else:
                 huge_orders = self.check_notification(last_data_from_buffer)
                 if huge_orders:
-                    # TODO: From here, you can continue working with data.
-                    logger.info(huge_orders)
+                    self.kafka_producer.add_action(data=huge_orders)
