@@ -2,10 +2,12 @@ Introduction
 ---
 This is the simple implementation of huge orders searching on **Binance** in order books through pairs (Like independent service). Working with WebSockets. Sending results to Kafka.
 
+\
 Main goal
 --
 To show the way of working in creating the structure, working with classes and transferring data to message broker.
 
+\
 How it works:
 ---
 1. Firstly we are taking user presets from config.ini
@@ -16,12 +18,13 @@ How it works:
 
 To check the results I created kafka_consumer.py. **REMINDER**: never store variables in code:) It's just the testing file to visualize that everything is working. Use env variable for *'localhost:9092'*.
 
+\
 Used solutions:
 ---
 1. [unicorn-binance-websocket-api](https://github.com/oliver-zehentleitner/unicorn-binance-websocket-api)
 2. [kafka-docker](https://github.com/wurstmeister/kafka-docker)
 
-
+\
 How to use
 ---
 1. Clone the repo
@@ -32,12 +35,12 @@ How to use
 > If pairs and Quotes will be empty, you will receive data from all pairs list (1024 streaming limitation, according to the limits).
 
 > volume_multiplicator - is used to multiply median value in the order book. Simple, stupid but so 🤷‍♂️
-3. Just build and run **dockerfile**
+
+3.1. Just run `docker-compose` inside directory
 ```bash
-docker build -t orders_searcher .
-docker run orders_searcher
+docker-compose up
 ```
-4. To check producer/consumer run kafka_consumer.py
+4. After the successful start of the containers, to check producer/consumer run `kafka_consumer.py`
 ```bash
 python3 kafka_consumer.py
 ```
